@@ -10,16 +10,6 @@
 
 [![Get help on Slack](http://img.shields.io/badge/slack-nf--core%20%23raredisease-4A154B?labelColor=000000&logo=slack)](https://nfcore.slack.com/channels/raredisease)[![Follow on Twitter](http://img.shields.io/badge/twitter-%40nf__core-1DA1F2?labelColor=000000&logo=twitter)](https://twitter.com/nf_core)[![Follow on Mastodon](https://img.shields.io/badge/mastodon-nf__core-6364ff?labelColor=FFFFFF&logo=mastodon)](https://mstdn.science/@nf_core)[![Watch on YouTube](http://img.shields.io/badge/youtube-nf--core-FF0000?labelColor=000000&logo=youtube)](https://www.youtube.com/c/nf-core)
 
-#### TOC
-
-- [Introduction](#introduction)
-- [Pipeline summary](#pipeline-summary)
-- [Usage](#usage)
-- [Pipeline output](#pipeline-output)
-- [Credits](#credits)
-- [Contributions and Support](#contributions-and-support)
-- [Citations](#citations)
-
 ## Introduction
 
 **nf-core/raredisease** is a best-practice bioinformatic pipeline for calling and scoring variants from WGS/WES data from rare disease patients. This pipeline is heavily inspired by [MIP](https://github.com/Clinical-Genomics/MIP).
@@ -30,73 +20,8 @@ On release, automated continuous integration tests run the pipeline on a full-si
 
 ## Pipeline summary
 
-**1. Metrics:**
+<iframe width="768" height="432" src="https://miro.com/app/live-embed/uXjVNBRfigU=/?moveToViewport=-5663,-6922,5529,3310&embedId=871456525688" frameborder="0" scrolling="no" allow="fullscreen; clipboard-read; clipboard-write" allowfullscreen></iframe>
 
-- [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)
-- [Mosdepth](https://github.com/brentp/mosdepth)
-- [MultiQC](http://multiqc.info/)
-- [Picard's CollectMutipleMetrics, CollectHsMetrics, and CollectWgsMetrics](https://broadinstitute.github.io/picard/)
-- [Qualimap](http://qualimap.conesalab.org/)
-- [Sentieon's WgsMetricsAlgo](https://support.sentieon.com/manual/usages/general/)
-- [TIDDIT's cov](https://github.com/J35P312/)
-
-**2. Alignment:**
-
-- [Bwa-mem2](https://github.com/bwa-mem2/bwa-mem2)
-- [Sentieon DNAseq](https://support.sentieon.com/manual/DNAseq_usage/dnaseq/)
-
-**3. Variant calling - SNV:**
-
-- [DeepVariant](https://github.com/google/deepvariant)
-- [Sentieon DNAscope](https://support.sentieon.com/manual/DNAscope_usage/dnascope/)
-
-**4. Variant calling - SV:**
-
-- [Manta](https://github.com/Illumina/manta)
-- [TIDDIT's sv](https://github.com/SciLifeLab/TIDDIT)
-- Copy number variant calling:
-  - [GATK GermlineCNVCaller](https://github.com/broadinstitute/gatk)
-
-**5. Annotation - SNV:**
-
-- [bcftools roh](https://samtools.github.io/bcftools/bcftools.html#roh)
-- [vcfanno](https://github.com/brentp/vcfanno)
-- [CADD](https://cadd.gs.washington.edu/)
-- [VEP](https://www.ensembl.org/info/docs/tools/vep/index.html)
-- [UPD](https://github.com/bjhall/upd)
-- [Chromograph](https://github.com/Clinical-Genomics/chromograph)
-
-**6. Annotation - SV:**
-
-- [SVDB query](https://github.com/J35P312/SVDB#Query)
-- [VEP](https://www.ensembl.org/info/docs/tools/vep/index.html)
-
-**7. Mitochondrial analysis:**
-
-- [Alignment and variant calling - GATK Mitochondrial short variant discovery pipeline ](https://gatk.broadinstitute.org/hc/en-us/articles/4403870837275-Mitochondrial-short-variant-discovery-SNVs-Indels-)
-- [eKLIPse](https://github.com/dooguypapua/eKLIPse/tree/master)
-- Annotation:
-  - [HaploGrep2](https://github.com/seppinho/haplogrep-cmd)
-  - [Hmtnote](https://github.com/robertopreste/HmtNote)
-  - [vcfanno](https://github.com/brentp/vcfanno)
-  - [CADD](https://cadd.gs.washington.edu/)
-  - [VEP](https://www.ensembl.org/info/docs/tools/vep/index.html)
-
-**8. Variant calling - repeat expansions:**
-
-- [Expansion Hunter](https://github.com/Illumina/ExpansionHunter)
-- [Stranger](https://github.com/Clinical-Genomics/stranger)
-
-**9. Rank variants - SV and SNV:**
-
-- [GENMOD](https://github.com/Clinical-Genomics/genmod)
-
-<!-- prettier-ignore -->
-<p align="center">
-    <img title="nf-core/raredisease workflow" src="docs/images/raredisease_workflow_v1.0.0.png" width=40%>
-</p>
-
-Note that it is possible to include/exclude certain tools or steps.
 
 ## Usage
 
