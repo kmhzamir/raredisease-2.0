@@ -2,7 +2,7 @@
 
 ## Introduction
 
-**raredisease-2.0** is a Synapsys pipeline for rare disease analysis. It uses fastp for preprocessing, bwa-mem2 for alignment, MarkDuplicates for duplicate removal, qCBAM for BAM QC, and HaplotypeCaller for variant calling and annotation. It now includes the MT pipeline and supports SNVs and SMNCopyNumberCaller, excluding SVs and GermlineCNVCaller..
+**raredisease-2.0** is a Synapsys pipeline for rare disease analysis. It uses fastp for preprocessing, bwa-mem2 for alignment, MarkDuplicates for duplicate removal, qCBAM for BAM QC, and HaplotypeCaller for variant calling and annotation. It now includes the MT pipeline and supports SNVs and SMNCopyNumberCaller, excluding SVs and GermlineCNVCaller.
 
 ## Pipeline summary
 
@@ -48,40 +48,3 @@ nextflow run nf-core/raredisease \
 > see [docs](https://nf-co.re/usage/configuration#custom-configuration-files).
 
 For more details and further functionality, please refer to the [usage documentation](https://nf-co.re/raredisease/usage) and the [parameter documentation](https://nf-co.re/raredisease/parameters).
-
-## Pipeline output
-
-For more details about the output files and reports, please refer to the
-[output documentation](https://nf-co.re/raredisease/output).
-
-## Credits
-
-nf-core/raredisease was written in a collaboration between the Clinical Genomics nodes in Sweden, with major contributions from [Ramprasad Neethiraj](https://github.com/ramprasadn), [Anders Jemt](https://github.com/jemten), [Lucia Pena Perez](https://github.com/Lucpen), and [Mei Wu](https://github.com/projectoriented) at Clinical Genomics Stockholm.
-
-Additional contributors were [Sima Rahimi](https://github.com/sima-r), [Gwenna Breton](https://github.com/Gwennid) and [Emma Västerviga](https://github.com/EmmaCAndersson) (Clinical Genomics Gothenburg); [Halfdan Rydbeck](https://github.com/hrydbeck) and [Lauri Mesilaakso](https://github.com/ljmesi) (Clinical Genomics Linköping); [Subazini Thankaswamy Kosalai](https://github.com/sysbiocoder) (Clinical Genomics Örebro); [Annick Renevey](https://github.com/rannick) and [Peter Pruisscher](https://github.com/peterpru) (Clinical Genomics Stockholm); [Ryan Kennedy](https://github.com/ryanjameskennedy) (Clinical Genomics Lund); [Anders Sune Pedersen](https://github.com/asp8200) (Danish National Genome Center) and [Lucas Taniguti](https://github.com/lmtani).
-<iframe width="768" height="432" src="https://miro.com/app/live-embed/uXjVNBRfigU=/?moveToViewport=-5663,-6922,5529,3310&embedId=871456525688" frameborder="0" scrolling="no" allow="fullscreen; clipboard-read; clipboard-write" allowfullscreen></iframe>
-We thank the nf-core community for their extensive assistance in the development of this pipeline.
-
-## Contributions and Support
-
-If you would like to contribute to this pipeline, please see the [contributing guidelines](.github/CONTRIBUTING.md).
-
-For further information or help, don't hesitate to get in touch on the [Slack `#raredisease` channel](https://nfcore.slack.com/channels/raredisease) (you can join with [this invite](https://nf-co.re/join/slack)).
-
-## Citations
-
-If you use nf-core/raredisease for your analysis, please cite it using the following doi: [10.5281/zenodo.7995798](https://doi.org/10.5281/zenodo.7995798)
-
-An extensive list of references for the tools used by the pipeline can be found in the [`CITATIONS.md`](CITATIONS.md) file.
-
-You can cite the `nf-core` publication as follows:
-
-> **The nf-core framework for community-curated bioinformatics pipelines.**
->
-> Philip Ewels, Alexander Peltzer, Sven Fillinger, Harshil Patel, Johannes Alneberg, Andreas Wilm, Maxime Ulysse Garcia, Paolo Di Tommaso & Sven Nahnsen.
->
-> _Nat Biotechnol._ 2020 Feb 13. doi: [10.1038/s41587-020-0439-x](https://dx.doi.org/10.1038/s41587-020-0439-x).
-
-You can read more about MIP's use in healthcare in,
-
-> Stranneheim H, Lagerstedt-Robinson K, Magnusson M, et al. Integration of whole genome sequencing into a healthcare setting: high diagnostic rates across multiple clinical entities in 3219 rare disease patients. Genome Med. 2021;13(1):40. doi:10.1186/s13073-021-00855-5
