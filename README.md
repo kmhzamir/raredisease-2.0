@@ -6,7 +6,6 @@
 
 ## Pipeline summary
 
-<iframe width="768" height="432" src="https://miro.com/app/live-embed/uXjVNBRfigU=/?moveToViewport=-5663,-6922,5529,3310&embedId=871456525688" frameborder="0" scrolling="no" allow="fullscreen; clipboard-read; clipboard-write" allowfullscreen></iframe>
 
 
 ## Usage
