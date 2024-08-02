@@ -55,7 +55,7 @@ workflow ANNOTATE_SNVS {
 
         VCFANNO (ch_vcf_in, ch_vcfanno_toml, ch_vcfanno_lua, ch_vcfanno_resources)
 
-        /*VCFANNO.out.vcf
+        VCFANNO.out.vcf
             .map {meta, vcf ->
                 def splitchannels = []
                 for (int i=0; i< meta.upd_children.size(); i++) {
@@ -72,7 +72,7 @@ workflow ANNOTATE_SNVS {
         UPD_SITES(ch_upd_in)
         UPD_REGIONS(ch_upd_in)
         CHROMOGRAPH_SITES([[],[]], [[],[]], [[],[]], [[],[]], [[],[]], [[],[]], UPD_SITES.out.bed)
-        CHROMOGRAPH_REGIONS([[],[]], [[],[]], [[],[]], [[],[]], [[],[]], UPD_REGIONS.out.bed, [[],[]]) */
+        CHROMOGRAPH_REGIONS([[],[]], [[],[]], [[],[]], [[],[]], [[],[]], UPD_REGIONS.out.bed, [[],[]]) 
 
         ZIP_TABIX_VCFANNO (VCFANNO.out.vcf)
 
@@ -151,10 +151,10 @@ workflow ANNOTATE_SNVS {
         ch_versions = ch_versions.mix(RHOCALL_ANNOTATE.out.versions)
         ch_versions = ch_versions.mix(ZIP_TABIX_ROHCALL.out.versions)
         ch_versions = ch_versions.mix(VCFANNO.out.versions)
-        //ch_versions = ch_versions.mix(UPD_SITES.out.versions)
-        //ch_versions = ch_versions.mix(UPD_REGIONS.out.versions)
-        //ch_versions = ch_versions.mix(CHROMOGRAPH_SITES.out.versions)
-        //ch_versions = ch_versions.mix(CHROMOGRAPH_REGIONS.out.versions)
+        ch_versions = ch_versions.mix(UPD_SITES.out.versions)
+        ch_versions = ch_versions.mix(UPD_REGIONS.out.versions)
+        ch_versions = ch_versions.mix(CHROMOGRAPH_SITES.out.versions)
+        ch_versions = ch_versions.mix(CHROMOGRAPH_REGIONS.out.versions)
         ch_versions = ch_versions.mix(ZIP_TABIX_VCFANNO.out.versions)
         ch_versions = ch_versions.mix(BCFTOOLS_VIEW.out.versions)
         ch_versions = ch_versions.mix(TABIX_BCFTOOLS_VIEW.out.versions)

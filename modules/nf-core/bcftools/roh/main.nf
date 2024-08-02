@@ -2,10 +2,10 @@ process BCFTOOLS_ROH {
     tag "$meta.id"
     label 'process_medium'
 
-    conda "bioconda::bcftools=1.17"
+    conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/bcftools:1.17--haef29d1_0':
-        'biocontainers/bcftools:1.17--haef29d1_0' }"
+        'https://depot.galaxyproject.org/singularity/bcftools:1.18--h8b25389_0':
+        'biocontainers/bcftools:1.18--h8b25389_0' }"
 
     input:
     tuple val(meta), path(vcf), path(tbi)
@@ -23,6 +23,7 @@ process BCFTOOLS_ROH {
     task.ext.when == null || task.ext.when
 
     script:
+    def args      = task.ext.args   ?: ''
     def prefix    = task.ext.prefix ?: "${meta.id}"
     def af_read   = af_file         ? "--AF-file ${af_file}"           : ''
     def gen_map   = genetic_map     ? "--genetic-map ${genetic_map}"   : ''
@@ -32,7 +33,7 @@ process BCFTOOLS_ROH {
     """
     bcftools \\
         roh \\
-        --skip-indels \\
+        $args \\
         $af_read \\
         $gen_map \\
         $reg_file \\

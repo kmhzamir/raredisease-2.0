@@ -1,10 +1,19 @@
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    PRINT PARAMS SUMMARY
+    IMPORT MODULES / SUBWORKFLOWS / FUNCTIONS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { paramsSummaryLog; paramsSummaryMap } from 'plugin/nf-validation'
+include { paramsSummaryLog; paramsSummaryMap; fromSamplesheet } from 'plugin/nf-validation'
+include { paramsSummaryMultiqc   } from '../subworkflows/nf-core/utils_nfcore_pipeline'
+include { softwareVersionsToYAML } from '../subworkflows/nf-core/utils_nfcore_pipeline'
+include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_raredisease_pipeline'
+
+/*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    PRINT PARAMS SUMMARY
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*/
 
 def logo = NfcoreTemplate.logo(workflow, params.monochrome_logs)
 def citation = '\n' + WorkflowMain.citation(workflow) + '\n'
@@ -32,6 +41,16 @@ def missingParamsCount = 0
 for (param in mandatoryParams.unique()) {
     if (params[param] == null) {
         println("params." + param + " not set.")
+        missingParamsCount += 1
+    }
+}
+
+if (!params.skip_vep_filter) {
+    if (!params.vep_filters && !params.vep_filters_scout_fmt) {
+        println("params.vep_filters or params.vep_filters_scout_fmt should be set.")
+        missingParamsCount += 1
+    } else if (params.vep_filters && params.vep_filters_scout_fmt) {
+        println("Either params.vep_filters or params.vep_filters_scout_fmt should be set.")
         missingParamsCount += 1
     }
 }
@@ -66,6 +85,7 @@ include { FASTQC                                } from '../modules/nf-core/fastq
 include { FASTP                                 } from '../modules/nf-core/fastp/main'
 include { MULTIQC                               } from '../modules/nf-core/multiqc/main'
 include { ALIGN                                 } from '../subworkflows/local/align'
+include { PROCESS_MT                            } from '../subworkflows/local/process_MT'
 include { PREPARE_REFERENCES                    } from '../subworkflows/local/prepare_references'
 include { SCATTER_GENOME                        } from '../subworkflows/local/scatter_genome'
 include { CUSTOM_DUMPSOFTWAREVERSIONS           } from '../modules/nf-core/custom/dumpsoftwareversions/main'
@@ -73,14 +93,21 @@ include { BAM_MARKDUPLICATES                    } from '../subworkflows/local/ba
 include { BAM_BASERECALIBRATOR                  } from '../subworkflows/local/bam_baserecalibrator/main'
 include { BAM_APPLYBQSR                         } from '../subworkflows/local/bam_applybqsr/main'
 include { QC_BAM                                } from '../subworkflows/local/qc_bam'
-include { BAM_VARIANT_CALLING_HAPLOTYPECALLER   } from '../subworkflows/local/bam_variant_calling_haplotypecaller'
 include { GATK4_HAPLOTYPECALLER                 } from '../modules/nf-core/gatk4/haplotypecaller/main'
 include { SMNCOPYNUMBERCALLER                   } from '../modules/nf-core/smncopynumbercaller/main'
 include { FILTER_VEP as FILTER_VEP_SNV          } from '../modules/local/filter_vep'
-include { ANNOTATE_CSQ_PLI as ANN_CSQ_PLI_SNV   } from '../subworkflows/local/annotate_consequence_pli'
-include { ANNOTATE_SNVS                         } from '../subworkflows/local/annotate_snvs'
-include { RANK_VARIANTS as RANK_VARIANTS_SNV    } from '../subworkflows/local/rank_variants'
 include { CREATE_PEDIGREE_FILE                  } from '../modules/local/create_pedigree_file'
+include { CALL_SNV                              } from '../subworkflows/local/call_snv'
+include { GATK4_MERGEVCFS as MERGE_VCFS         } from '../modules/nf-core/gatk4/merge_vcfs/main'
+include { CREATE_HGNCIDS_FILE                   } from '../modules/local/create_hgncids_file'
+include { ANNOTATE_MT_SNVS                                   } from '../subworkflows/local/annotate_mt_snvs'
+include { GENERATE_CLINICAL_SET as GENERATE_CLINICAL_SET_MT  } from '../subworkflows/local/generate_clinical_set'
+include { RANK_VARIANTS as RANK_VARIANTS_MT                  } from '../subworkflows/local/rank_variants'
+include { ANNOTATE_CSQ_PLI as ANN_CSQ_PLI_MT                 } from '../subworkflows/local/annotate_consequence_pli'
+include { ANNOTATE_GENOME_SNVS                               } from '../subworkflows/local/annotate_genome_snvs'
+include { ANNOTATE_CSQ_PLI as ANN_CSQ_PLI_SNV                } from '../subworkflows/local/annotate_consequence_pli'
+include { GENERATE_CLINICAL_SET as GENERATE_CLINICAL_SET_SNV } from '../subworkflows/local/generate_clinical_set'
+include { RANK_VARIANTS as RANK_VARIANTS_SNV                 } from '../subworkflows/local/rank_variants'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -109,6 +136,7 @@ workflow RAREDISEASE {
     ch_target_bed_unprocessed   = params.target_bed     ? Channel.fromPath(params.target_bed).map{ it -> [[id:it[0].simpleName], it] }.collect()
                                                         : Channel.value([[],[]]) 
     known_indels                = params.known_indels   ? Channel.fromPath(params.known_indels).collect()            : Channel.value([])
+    known_indels_2              = params.known_indels_2 ? Channel.fromPath(params.known_indels_2).collect()          : Channel.value([])
     dbsnp                       = params.dbsnp          ? Channel.fromPath(params.dbsnp).collect()                   : Channel.value([])
     ch_intervals_wgs            = params.intervals_wgs  ? Channel.fromPath(params.intervals_wgs).collect()
                                                         : Channel.empty()
@@ -119,14 +147,18 @@ workflow RAREDISEASE {
                                                         : Channel.value([[],[]])
     ch_vep_cache_unprocessed    = params.vep_cache      ? Channel.fromPath(params.vep_cache).map { it -> [[id:'vep_cache'], it] }.collect()
                                                         : Channel.value([[],[]])
+    ch_mt_fasta                 = params.mt_fasta       ? Channel.fromPath(params.mt_fasta).map { it -> [[id:it[0].simpleName], it] }.collect()
+                                                        : Channel.empty()
 
     // Prepare references and indices.
     PREPARE_REFERENCES (
         ch_genome_fasta,
         ch_genome_fai,
+        ch_mt_fasta,
         ch_target_bed_unprocessed,
         dbsnp,
         known_indels,
+        known_indels_2,
         ch_gnomad_af_tab,
         ch_vep_cache_unprocessed
     )
@@ -134,6 +166,8 @@ workflow RAREDISEASE {
 
     // Gather built indices or get them from the params
     ch_cadd_header              = Channel.fromPath("$projectDir/assets/cadd_to_vcf_header_-1.0-.txt", checkIfExists: true).collect()
+    ch_variant_consequences     = Channel.fromPath("$projectDir/assets/variant_consequences_v1.txt", checkIfExists: true).collect()
+    ch_foundin_header           = Channel.fromPath("$projectDir/assets/foundin.hdr", checkIfExists: true).collect()
     ch_cadd_resources           = params.cadd_resources                    ? Channel.fromPath(params.cadd_resources).collect()
                                                                            : Channel.value([])
     ch_bait_intervals           = ch_references.bait_intervals
@@ -141,16 +175,16 @@ workflow RAREDISEASE {
                                                                             : ch_references.genome_bwa_index
     ch_genome_bwamem2index      = params.bwamem2                            ? Channel.fromPath(params.bwamem2).map {it -> [[id:it[0].simpleName], it]}.collect()
                                                                             : ch_references.genome_bwamem2_index
-    ch_genome_chrsizes          = ch_references.genome_chrom_sizes
     ch_genome_fai               = ch_references.genome_fai
     ch_genome_dictionary        = params.sequence_dictionary                ? Channel.fromPath(params.sequence_dictionary).map {it -> [[id:it[0].simpleName], it]}.collect()
                                                                             : ch_references.genome_dict
     ch_target_bed               = ch_references.target_bed
     known_indels_tbi            = params.known_indels   ? params.known_indels_tbi      ? Channel.fromPath(params.known_indels_tbi).collect()      : PREPARE_REFERENCES.out.known_indels_tbi      : Channel.value([])
+    known_indels_2_tbi          = params.known_indels_2 ? params.known_indels_2_tbi    ? Channel.fromPath(params.known_indels_2_tbi).collect()    : PREPARE_REFERENCES.out.known_indels_2_tbi    : Channel.value([])
     dbsnp_tbi                   = params.dbsnp          ? params.dbsnp_tbi             ? Channel.fromPath(params.dbsnp_tbi).collect()             : PREPARE_REFERENCES.out.dbsnp_tbi             : Channel.value([])
     dict                        = params.dict           ? Channel.fromPath(params.dict).map{ it -> [ [id:'dict'], it ] }.collect()
                                                         : PREPARE_REFERENCES.out.genome_dict
-    ch_genome_chrsizes          = PREPARE_REFERENCES.out.genome_chrom_sizes
+    ch_genome_chrsizes          = ch_references.genome_chrom_sizes
     ch_target_intervals         = ch_references.target_intervals
     ch_gnomad_afidx             = params.gnomad_af_idx                     ? Channel.fromPath(params.gnomad_af_idx).collect()
                                                                            : ch_references.gnomad_af_idx
@@ -160,7 +194,8 @@ workflow RAREDISEASE {
                                                                            : Channel.value([])
     ch_score_config_snv         = params.score_config_snv                  ? Channel.fromPath(params.score_config_snv).collect()
                                                                            : Channel.value([])
-    ch_variant_consequences     = Channel.fromPath("$projectDir/assets/variant_consequences_v1.txt", checkIfExists: true).collect()
+    ch_score_config_mt          = params.score_config_mt                    ? Channel.fromPath(params.score_config_mt).collect()
+                                                                            : Channel.value([])
     ch_vcfanno_resources        = params.vcfanno_resources                 ? Channel.fromPath(params.vcfanno_resources).splitText().map{it -> it.trim()}.collect()
                                                                            : Channel.value([])
     ch_vcfanno_lua              = params.vcfanno_lua                       ? Channel.fromPath(params.vcfanno_lua).collect()
@@ -171,13 +206,50 @@ workflow RAREDISEASE {
                                                                            : ( params.vep_cache    ? Channel.fromPath(params.vep_cache).collect() : Channel.value([]) )
     ch_vep_filters              = params.vep_filters                       ? Channel.fromPath(params.vep_filters).collect()
                                                                            : Channel.value([])
-    chh_pedfile                 = params.ped_file                          ? Channel.fromPath(params.ped_file).collect()
-                                                                           : Channel.value([])                                                           
+    ch_vep_extra_files_unsplit  = params.vep_plugin_files                  ? Channel.fromPath(params.vep_plugin_files).collect()
+                                                                           : Channel.value([])
+    ch_vep_filters_std_fmt      = params.vep_filters                        ? Channel.fromPath(params.vep_filters).map { it -> [[id:'standard'],it]}.collect()
+                                                                            : Channel.empty()
+    ch_vep_filters_scout_fmt    = params.vep_filters_scout_fmt              ? Channel.fromPath(params.vep_filters_scout_fmt).map { it -> [[id:'scout'],it]}.collect()
+                                                                            : Channel.empty()
+    ch_variant_consequences_snv = params.variant_consequences_snv           ? Channel.fromPath(params.variant_consequences_snv).collect()
+                                                                            : Channel.value([])
+    ch_mtshift_bwamem2index     = ch_references.mtshift_bwamem2_index
+    ch_mtshift_dictionary       = ch_references.mtshift_dict
+    ch_mtshift_fai              = ch_references.mtshift_fai
+    ch_mtshift_fasta            = ch_references.mtshift_fasta
+    ch_mtshift_intervals        = ch_references.mtshift_intervals
+    ch_mt_intervals             = ch_references.mt_intervals
+    ch_mtshift_backchain        = ch_references.mtshift_backchain                         
     ch_versions                 = ch_versions.mix(ch_references.versions)
 
+    // Read and store paths in the vep_plugin_files file
+    if (params.vep_plugin_files) {
+        ch_vep_extra_files_unsplit.splitCsv ( header:true )
+            .map { row ->
+                f = file(row.vep_files[0])
+                if(f.isFile() || f.isDirectory()){
+                    return [f]
+                } else {
+                    error("\nVep database file ${f} does not exist.")
+                }
+            }
+            .collect()
+            .set {ch_vep_extra_files}
+    }
+
+    // Read and store hgnc ids in a channel
+    ch_vep_filters_scout_fmt
+        .mix (ch_vep_filters_std_fmt)
+        .set {ch_vep_filters}
+
+    CREATE_HGNCIDS_FILE(ch_vep_filters)
+        .txt
+        .set {ch_hgnc_ids}
+
     // known_sites is made by grouping both the dbsnp and the known snps/indels resources
-    known_sites_indels     = dbsnp.concat(known_indels).collect()
-    known_sites_indels_tbi = dbsnp_tbi.concat(known_indels_tbi).collect()
+    known_sites_indels     = known_indels_2.concat(known_indels).collect()
+    known_sites_indels_tbi = known_indels_2_tbi.concat(known_indels_tbi).collect()
 
     // Generate pedigree file
     ch_pedfile   = CREATE_PEDIGREE_FILE(ch_samples.toList()).ped
@@ -202,63 +274,26 @@ workflow RAREDISEASE {
     )
     ch_reports = ch_reports.mix(FASTQC.out.zip.collect{ meta, logs -> logs })
     ch_versions = ch_versions.mix(FASTQC.out.versions.first())
-
-    //
-    // MODULE: Run Fastp trimming
-    //
-    // Trimming and/or splitting
-    if (params.trim_fastq || params.split_fastq > 0) {
-        save_trimmed_fail = false
-        save_merged = false
-        FASTP(
-            ch_samplesheet,
-            [],
-            save_trimmed_fail,
-            save_merged
-        )
-
-        ch_reports = ch_reports.mix(FASTP.out.json.collect{ meta, json -> json })
-        ch_reports = ch_reports.mix(FASTP.out.html.collect{ meta, html -> html })
-
-        if (params.split_fastq) {
-            reads_for_alignment = FASTP.out.reads.map{ meta, reads ->
-                read_files = reads.sort(false) { a,b -> a.getName().tokenize('.')[0] <=> b.getName().tokenize('.')[0] }.collate(2)
-                [ meta + [ size:read_files.size() ], read_files ]
-            }.transpose()
-        } else reads_for_alignment = FASTP.out.reads
-
-        ch_versions = ch_versions.mix(FASTP.out.versions)
-
-    } 
-    else {
-       reads_for_alignment = ch_samplesheet
-    }
     
     //
     // ALIGNING READS, FETCH STATS, AND MERGE.
     //
     ALIGN (
-        reads_for_alignment,
+        ch_samplesheet,
         ch_genome_fasta,
         ch_genome_fai,
         ch_genome_bwaindex,
         ch_genome_bwamem2index,
+        ch_genome_dictionary,
+        ch_mtshift_bwamem2index,
+        ch_mtshift_fasta,
+        ch_mtshift_dictionary,
+        ch_mtshift_fai,
         params.platform
     )
     .set { ch_aligned }
     ch_versions   = ch_versions.mix(ALIGN.out.versions)
-
-
-    //MARKDUPLICATES AND REMOVE DUPLICATES
-    BAM_MARKDUPLICATES(
-                ALIGN.out.ch_bam_bai,
-                ch_genome_fasta,
-                ch_genome_fai,
-    )
-    .set {ch_mapped}
-
-    ch_versions = ch_versions.mix(BAM_MARKDUPLICATES.out.versions)
-    mapped_bam_bai = BAM_MARKDUPLICATES.out.a_genome_bam_bai
+    mapped_bam_bai = ALIGN.out.genome_bam_bai
 
     //BASERECALIBRATOR
     BAM_BASERECALIBRATOR(
@@ -269,7 +304,6 @@ workflow RAREDISEASE {
                 known_sites_indels,
                 known_sites_indels_tbi
     )
-    
     ch_versions = ch_versions.mix(BAM_BASERECALIBRATOR.out.versions)
     ch_table_bqsr = BAM_BASERECALIBRATOR.out.table_bqsr
     bam_applybqsr = mapped_bam_bai.join(ch_table_bqsr)
@@ -327,28 +361,39 @@ workflow RAREDISEASE {
     SMNCOPYNUMBERCALLER (
         ch_bams_bais
     )
-    ch_versions = ch_versions.mix(SMNCOPYNUMBERCALLER.out.versions)
+    ch_versions = ch_versions.mix(SMNCOPYNUMBERCALLER.out.versions)        
 
     //
     // SNV Variant calling
     //
-    if (params.analysis_type == "wes") {
-        BAM_VARIANT_CALLING_HAPLOTYPECALLER(
-            ch_haplotypecaller_interval_bam, 
-            ch_genome_fasta, 
-            ch_genome_fai, 
-            dict, 
-            dbsnp, 
-            dbsnp_tbi
-        )
-    }
-    ch_versions = ch_versions.mix(BAM_VARIANT_CALLING_HAPLOTYPECALLER.out.ch_versions)
+    CALL_SNV (
+        ch_haplotypecaller_interval_bam,
+        ch_aligned.mt_bam_bai,
+        ch_aligned.mtshift_bam_bai,
+        ch_genome_chrsizes,
+        ch_genome_fasta,
+        ch_genome_fai,
+        ch_genome_dictionary,
+        ch_mt_intervals,
+        ch_mtshift_fasta,
+        ch_mtshift_fai,
+        ch_mtshift_dictionary,
+        ch_mtshift_intervals,
+        ch_mtshift_backchain,
+        dbsnp,
+        dbsnp_tbi,
+        ch_case_info,
+        ch_foundin_header,
+    )
+    ch_versions = ch_versions.mix(CALL_SNV.out.versions)
 
-    // VARIANT ANNOTATION
-
+    //
+    // ANNOTATE GENOME SNVs
+    //
     if (!params.skip_snv_annotation) {
-        ANNOTATE_SNVS (
-            BAM_VARIANT_CALLING_HAPLOTYPECALLER.out.vcf_tbi,
+
+        ANNOTATE_GENOME_SNVS (
+            CALL_SNV.out.genome_vcf_tabix,
             params.analysis_type,
             ch_cadd_header,
             ch_cadd_resources,
@@ -360,15 +405,22 @@ workflow RAREDISEASE {
             ch_vep_cache,
             ch_genome_fasta,
             ch_gnomad_af,
-            ch_scatter_split_intervals
-        ).set {ch_snv_annotate}
+            ch_samples,
+            ch_scatter_split_intervals,
+            ch_vep_extra_files,
+            ch_genome_chrsizes
+        ).set { ch_snv_annotate }
         ch_versions = ch_versions.mix(ch_snv_annotate.versions)
 
-        ch_snv_annotate = ANNOTATE_SNVS.out.vcf_ann
+        GENERATE_CLINICAL_SET_SNV(
+            ch_snv_annotate.vcf_ann,
+            ch_hgnc_ids
+        )
+        ch_versions = ch_versions.mix(GENERATE_CLINICAL_SET_SNV.out.versions)
 
         ANN_CSQ_PLI_SNV (
-            ch_snv_annotate,
-            ch_variant_consequences
+            GENERATE_CLINICAL_SET_SNV.out.vcf,
+            ch_variant_consequences_snv
         )
         ch_versions = ch_versions.mix(ANN_CSQ_PLI_SNV.out.versions)
 
@@ -380,13 +432,55 @@ workflow RAREDISEASE {
         )
         ch_versions = ch_versions.mix(RANK_VARIANTS_SNV.out.versions)
 
-        FILTER_VEP_SNV(
-            RANK_VARIANTS_SNV.out.vcf,
-            ch_vep_filters
-        )
-        ch_versions = ch_versions.mix(FILTER_VEP_SNV.out.versions)
+    }
 
-    } 
+    //
+    // ANNOTATE MT SNVs
+    //
+    if (!params.skip_mt_annotation && (params.run_mt_for_wes || params.analysis_type.equals("wgs"))) {
+
+        ANNOTATE_MT_SNVS (
+            CALL_SNV.out.mt_vcf,
+            CALL_SNV.out.mt_tabix,
+            ch_cadd_header,
+            ch_cadd_resources,
+            ch_genome_fasta,
+            ch_vcfanno_resources,
+            ch_vcfanno_toml,
+            params.genome,
+            params.vep_cache_version,
+            ch_vep_cache,
+            ch_vep_extra_files
+        ).set { ch_mt_annotate }
+        ch_versions = ch_versions.mix(ch_mt_annotate.versions)
+
+        GENERATE_CLINICAL_SET_MT(
+            ch_mt_annotate.vcf_ann,
+            ch_hgnc_ids
+        )
+        ch_versions = ch_versions.mix(GENERATE_CLINICAL_SET_MT.out.versions)
+
+        ANN_CSQ_PLI_MT(
+            GENERATE_CLINICAL_SET_MT.out.vcf,
+            ch_variant_consequences_snv
+        )
+        ch_versions = ch_versions.mix(ANN_CSQ_PLI_MT.out.versions)
+
+        RANK_VARIANTS_MT (
+            ANN_CSQ_PLI_MT.out.vcf_ann,
+            ch_pedfile,
+            ch_reduced_penetrance,
+            ch_score_config_mt
+        )
+        ch_versions = ch_versions.mix(RANK_VARIANTS_MT.out.versions)
+
+    }
+
+    MERGE_VCFS(
+        RANK_VARIANTS_SNV.out.vcf,
+        RANK_VARIANTS_MT.out.vcf 
+    ) 
+
 
     //
     // MODULE: Pipeline reporting

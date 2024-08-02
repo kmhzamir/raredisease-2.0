@@ -31,8 +31,12 @@ params.gnomad_af                      = WorkflowMain.getGenomeAttribute(params, 
 params.gnomad_af_idx                  = WorkflowMain.getGenomeAttribute(params, 'gnomad_af_idx')
 params.intervals_wgs                  = WorkflowMain.getGenomeAttribute(params, 'intervals_wgs')
 params.intervals_y                    = WorkflowMain.getGenomeAttribute(params, 'intervals_y')
-params.known_dbsnp                    = WorkflowMain.getGenomeAttribute(params, 'known_dbsnp')
-params.known_dbsnp_tbi                = WorkflowMain.getGenomeAttribute(params, 'known_dbsnp_tbi')
+params.dbsnp                          = WorkflowMain.getGenomeAttribute(params, 'dbsnp')
+params.dbsnp_tbi                      = WorkflowMain.getGenomeAttribute(params, 'dbsnp_tbi')
+params.known_indels                   = WorkflowMain.getGenomeAttribute(params, 'known_indels')
+params.known_indels_tbi               = WorkflowMain.getGenomeAttribute(params, 'known_indels_tbi')
+params.known_indels_2                 = WorkflowMain.getGenomeAttribute(params, 'known_indels_2')
+params.known_indels_2_tbi             = WorkflowMain.getGenomeAttribute(params, 'known_indels_2_tbi')
 params.ml_model                       = WorkflowMain.getGenomeAttribute(params, 'ml_model')
 params.mt_fasta                       = WorkflowMain.getGenomeAttribute(params, 'mt_fasta')
 params.ploidy_model                   = WorkflowMain.getGenomeAttribute(params, 'ploidy_model')
@@ -50,7 +54,7 @@ params.vcfanno_toml                   = WorkflowMain.getGenomeAttribute(params, 
 params.vcfanno_lua                    = WorkflowMain.getGenomeAttribute(params, 'vcfanno_lua')
 params.vep_cache                      = WorkflowMain.getGenomeAttribute(params, 'vep_cache')
 params.vep_cache_version              = WorkflowMain.getGenomeAttribute(params, 'vep_cache_version')
-params.ped_file                       = WorkflowMain.getGenomeAttribute(params, 'ped_file')
+params.dict                           = WorkflowMain.getGenomeAttribute(params, 'dict')
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
