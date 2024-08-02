@@ -6,6 +6,7 @@
 
 ## Pipeline summary
 
+![Pipeline]([https://github.com/kmhzamir/raredisease-2.0/blob/master/docs/images/Rare%20Disease%20Pipeline%20Modularization%20-%20raredisease%202.0.jpg])
 
 
 ## Usage
