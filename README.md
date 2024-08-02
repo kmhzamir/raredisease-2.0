@@ -8,7 +8,7 @@
 
 <!-- prettier-ignore -->
 <p align="center">
-    <img title="nf-core/raredisease workflow" src="docs/images/Rare Disease Pipeline Modularization - raredisease 2.0.jpg" width=60%>
+    <img title="nf-core/raredisease workflow" src="docs/images/Rare Disease Pipeline Modularization (1).jpg" width=60%>
 </p>
 
 
