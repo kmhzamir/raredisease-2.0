@@ -34,9 +34,8 @@ workflow CALL_SNV {
         ch_mt_vcf        = Channel.empty()
         ch_mt_tabix      = Channel.empty()
         ch_genome_vcf_tabix    = Channel.empty()
-        
 
-        if (params.analysis_type == "wes") {
+
         BAM_VARIANT_CALLING_HAPLOTYPECALLER(
             ch_genome_bam_bai, 
             ch_genome_fasta, 
@@ -58,7 +57,6 @@ workflow CALL_SNV {
         ch_genome_vcf       = GATK4_SELECTVARIANTS.out.vcf
         ch_genome_tabix     = GATK4_SELECTVARIANTS.out.tbi
         ch_genome_vcf_tabix = ch_genome_vcf.join(ch_genome_tabix, failOnMismatch:true, failOnDuplicate:true)
-        }
 
         if (params.analysis_type.equals("wgs") || params.run_mt_for_wes) {
             CALL_SNV_MT(
