@@ -390,7 +390,6 @@ workflow RAREDISEASE {
     //
     // ANNOTATE GENOME SNVs
     //
-    if (!params.skip_snv_annotation) {
 
         ANNOTATE_GENOME_SNVS (
             CALL_SNV.out.genome_vcf_tabix,
@@ -432,12 +431,9 @@ workflow RAREDISEASE {
         )
         ch_versions = ch_versions.mix(RANK_VARIANTS_SNV.out.versions)
 
-    }
-
     //
     // ANNOTATE MT SNVs
     //
-    if (!params.skip_mt_annotation && (params.run_mt_for_wes || params.analysis_type.equals("wgs"))) {
 
         ANNOTATE_MT_SNVS (
             CALL_SNV.out.mt_vcf,
@@ -473,8 +469,6 @@ workflow RAREDISEASE {
             ch_score_config_mt
         )
         ch_versions = ch_versions.mix(RANK_VARIANTS_MT.out.versions)
-
-    }
 
     MERGE_VCFS(
         RANK_VARIANTS_SNV.out.vcf,
