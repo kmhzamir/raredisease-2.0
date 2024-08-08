@@ -434,6 +434,53 @@ workflow RAREDISEASE {
 
     }
 
+    //
+    // ANNOTATE MT SNVs
+    //
+    if (!params.skip_mt_annotation && (params.run_mt_for_wes || params.analysis_type.equals("wgs"))) {
+
+        ANNOTATE_MT_SNVS (
+            CALL_SNV.out.mt_vcf,
+            CALL_SNV.out.mt_tabix,
+            ch_cadd_header,
+            ch_cadd_resources,
+            ch_genome_fasta,
+            ch_vcfanno_resources,
+            ch_vcfanno_toml,
+            params.genome,
+            params.vep_cache_version,
+            ch_vep_cache,
+            ch_vep_extra_files
+        ).set { ch_mt_annotate }
+        ch_versions = ch_versions.mix(ch_mt_annotate.versions)
+
+        GENERATE_CLINICAL_SET_MT(
+            ch_mt_annotate.vcf_ann,
+            ch_hgnc_ids
+        )
+        ch_versions = ch_versions.mix(GENERATE_CLINICAL_SET_MT.out.versions)
+
+        ANN_CSQ_PLI_MT(
+            GENERATE_CLINICAL_SET_MT.out.vcf,
+            ch_variant_consequences_snv
+        )
+        ch_versions = ch_versions.mix(ANN_CSQ_PLI_MT.out.versions)
+
+        RANK_VARIANTS_MT (
+            ANN_CSQ_PLI_MT.out.vcf_ann,
+            ch_pedfile,
+            ch_reduced_penetrance,
+            ch_score_config_mt
+        )
+        ch_versions = ch_versions.mix(RANK_VARIANTS_MT.out.versions)
+
+    }
+
+    MERGE_VCFS(
+        RANK_VARIANTS_SNV.out.vcf,
+        RANK_VARIANTS_MT.out.vcf 
+    ) 
+
 
     //
     // MODULE: Pipeline reporting
