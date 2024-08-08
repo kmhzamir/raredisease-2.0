@@ -95,7 +95,6 @@ workflow ANNOTATE_MT_SNVS {
         ch_versions = ch_versions.mix(TABIX_TABIX_VEP_MT.out.versions)
         ch_versions = ch_versions.mix(HMTNOTE_ANNOTATE.out.versions)
         ch_versions = ch_versions.mix(HAPLOGREP2_CLASSIFY_MT.out.versions)
-        ch_versions = ch_versions.mix(ZIP_TABIX_VCFANNO_MT.out.versions)
         ch_versions = ch_versions.mix(ZIP_TABIX_HMTNOTE_MT.out.versions)
         ch_versions = ch_versions.mix(REPLACE_SPACES_IN_VCFINFO.out.versions)
 
