@@ -42,8 +42,16 @@ workflow ANNOTATE_MT_SNVS {
         REPLACE_SPACES_IN_VCFINFO(HMTNOTE_ANNOTATE.out.vcf)
         ZIP_TABIX_HMTNOTE_MT(REPLACE_SPACES_IN_VCFINFO.out.vcf)
 
-        ch_vcfanno_vcf = ZIP_TABIX_HMTNOTE_MT.out.gz_tbi.map{meta, vcf, tbi -> return [meta, vcf]}
-        ch_vcfanno_tbi = ZIP_TABIX_HMTNOTE_MT.out.gz_tbi.map{meta, vcf, tbi -> return [meta, tbi]}
+        // Vcfanno
+        ZIP_TABIX_HMTNOTE_MT.out.gz_tbi
+            .map { meta, vcf, tbi -> return [meta + [prefix: meta.prefix + "_vcfanno"], vcf, tbi, []]}
+            .set { ch_in_vcfanno }
+
+        VCFANNO_MT(ch_in_vcfanno, ch_vcfanno_toml, [], ch_vcfanno_resources)
+        ZIP_TABIX_VCFANNO_MT(VCFANNO_MT.out.vcf)
+
+        ch_vcfanno_vcf = ZIP_TABIX_VCFANNO_MT.out.gz_tbi.map{meta, vcf, tbi -> return [meta, vcf]}
+        ch_vcfanno_tbi = ZIP_TABIX_VCFANNO_MT.out.gz_tbi.map{meta, vcf, tbi -> return [meta, tbi]}
 
         // Annotating with CADD
         if (params.cadd_resources != null) {
@@ -93,8 +101,10 @@ workflow ANNOTATE_MT_SNVS {
 
         ch_versions = ch_versions.mix(ENSEMBLVEP_MT.out.versions)
         ch_versions = ch_versions.mix(TABIX_TABIX_VEP_MT.out.versions)
+        ch_versions = ch_versions.mix(VCFANNO_MT.out.versions)
         ch_versions = ch_versions.mix(HMTNOTE_ANNOTATE.out.versions)
         ch_versions = ch_versions.mix(HAPLOGREP2_CLASSIFY_MT.out.versions)
+        ch_versions = ch_versions.mix(ZIP_TABIX_VCFANNO_MT.out.versions)
         ch_versions = ch_versions.mix(ZIP_TABIX_HMTNOTE_MT.out.versions)
         ch_versions = ch_versions.mix(REPLACE_SPACES_IN_VCFINFO.out.versions)
 
