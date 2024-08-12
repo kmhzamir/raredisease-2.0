@@ -24,7 +24,12 @@ process VCFANNO {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     def lua_cmd = lua ? "--lua ${lua}" : ""
+
     """
+    # Download all files in the S3 directory
+    aws s3 cp s3://refgenomes-synapse/annotation-reference/hg19/ . --recursive
+
+    # Run vcfanno with the local files
     vcfanno \\
         -p ${task.cpus} \\
         ${args} \\
@@ -33,6 +38,7 @@ process VCFANNO {
         ${vcf} \\
         > ${prefix}.vcf
 
+    # Save the version information
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         vcfanno: \$(echo \$(vcfanno 2>&1 | grep version | cut -f3 -d' ' ))
