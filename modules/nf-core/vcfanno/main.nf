@@ -25,7 +25,6 @@ process VCFANNO {
     def prefix = task.ext.prefix ?: "${meta.id}"
     def lua_cmd = lua ? "--lua ${lua}" : ""
 
-    # Download files from S3 if they are referenced in the paths
     if (toml.startsWith("s3://")) {
         """
         aws s3 cp ${toml} ./local_toml_file.toml
