@@ -25,11 +25,27 @@ process VCFANNO {
     def prefix = task.ext.prefix ?: "${meta.id}"
     def lua_cmd = lua ? "--lua ${lua}" : ""
 
-    """
-    # Download all files in the S3 directory
-    aws s3 cp s3://refgenomes-synapse/annotation-reference/hg19/ . --recursive
+    # Download files from S3 if they are referenced in the paths
+    if (toml.startsWith("s3://")) {
+        """
+        aws s3 cp ${toml} ./local_toml_file.toml
+        toml="./local_toml_file.toml"
+        """
+    }
+    if (vcf.startsWith("s3://")) {
+        """
+        aws s3 cp ${vcf} ./local_vcf_file.vcf.gz
+        vcf="./local_vcf_file.vcf.gz"
+        """
+    }
+    if (resources.startsWith("s3://")) {
+        """
+        aws s3 cp ${resources} ./local_resources_dir --recursive
+        resources="./local_resources_dir"
+        """
+    }
 
-    # Run vcfanno with the local files
+    """
     vcfanno \\
         -p ${task.cpus} \\
         ${args} \\
@@ -38,10 +54,9 @@ process VCFANNO {
         ${vcf} \\
         > ${prefix}.vcf
 
-    # Save the version information
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        vcfanno: \$(echo \$(vcfanno 2>&1 | grep version | cut -f3 -d' ' ))
+        vcfanno: \$(echo \$(vcfanno 2>&1 | grep version | cut -f3 -d' '))
     END_VERSIONS
     """
 
@@ -52,7 +67,7 @@ process VCFANNO {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        vcfanno: \$(echo \$(vcfanno 2>&1 | grep version | cut -f3 -d' ' ))
+        vcfanno: \$(echo \$(vcfanno 2>&1 | grep version | cut -f3 -d' '))
     END_VERSIONS
     """
 }
