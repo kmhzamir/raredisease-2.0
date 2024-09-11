@@ -358,10 +358,10 @@ workflow RAREDISEASE {
         .combine(ch_bai_list)
         .set { ch_bams_bais }
 
-    SMNCOPYNUMBERCALLER (
+    /*SMNCOPYNUMBERCALLER (
         ch_bams_bais
     )
-    ch_versions = ch_versions.mix(SMNCOPYNUMBERCALLER.out.versions)        
+    ch_versions = ch_versions.mix(SMNCOPYNUMBERCALLER.out.versions) */       
 
     //
     // SNV Variant calling
